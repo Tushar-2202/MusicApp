@@ -8,26 +8,30 @@ import {
   FlatList,
   ScrollView,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import LinearGradient from 'react-native-linear-gradient';
-import {songsList} from './src/Songs';
+import { songsList } from './src/Songs';
 import TrackPlayer, {
   Capability,
+  Event,
   State,
   usePlaybackState,
   useProgress,
 } from 'react-native-track-player';
 import Modal from 'react-native-modal';
 import SongPlayer from './SongPlayer';
+import Slider from '@react-native-community/slider';
 const App = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const playbackState = usePlaybackState();
   const progress = useProgress();
-  const [isVisible,setIsVisible]=useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const [shuffleArraySong, setShuffleArraySong] = useState(songsList);
 
   useEffect(() => {
     setupPlayer();
   }, []);
+
   const setupPlayer = async () => {
     try {
       await TrackPlayer.setupPlayer();
@@ -46,24 +50,24 @@ const App = () => {
 
         // Icons for the notification on Android (if you don't like the default ones)
       });
-      await TrackPlayer.add(songsList);
+      await TrackPlayer.add(shuffleArraySong);
     } catch (e) {
       console.log(e);
     }
   };
+
   useEffect(() => {
-    if (State.Playing == playbackState) {
-      if (progress.position.toFixed(0) == progress.duration.toFixed(0)) {
-        if (currentIndex < songsList.length) {
-          setCurrentIndex(currentIndex + 1);
-        }
+    TrackPlayer.addEventListener(Event.PlaybackTrackChanged, async e => {
+      if (e.nextTrack < songsList.length) {
+        setCurrentIndex(e.nextTrack);
       }
-    }
-  }, [progress]);
+    });
+  }, []);
+
   return (
     <LinearGradient
-      colors={['#a34c0d', '#592804', '#241001', '#000000']}
-      style={{flex: 1}}>
+      colors={songsList[currentIndex].colors}
+      style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor={'transparent'} />
 
       <Image
@@ -87,7 +91,7 @@ const App = () => {
           style={{
             width: '85%',
             height: 37,
-            backgroundColor: '#b06a41',
+            backgroundColor: songsList[currentIndex].colors[1],
             borderRadius: 5,
             flexDirection: 'row',
             paddingLeft: 15,
@@ -95,26 +99,26 @@ const App = () => {
           }}>
           <Image
             source={require('./src/images/search2.png')}
-            style={{width: 18, height: 18, tintColor: 'white'}}
+            style={{ width: 18, height: 18, tintColor: 'white' }}
           />
-          <Text style={{color: 'white', marginLeft: 10}}>Find in Playlist</Text>
+          <Text style={{ color: 'white', marginLeft: 10 }}>Find in Playlist</Text>
         </View>
         <View
           style={{
             width: '15%',
             height: 37,
-            backgroundColor: '#b06a41',
+            backgroundColor: songsList[currentIndex].colors[1],
             borderRadius: 5,
 
             alignItems: 'center',
             justifyContent: 'center',
             marginLeft: 5,
           }}>
-          <Text style={{color: 'white', fontWeight: '600'}}>Sort</Text>
+          <Text style={{ color: 'white', fontWeight: '600' }}>Sort</Text>
         </View>
       </View>
       <Image
-        source={{uri: songsList[currentIndex].artwork}}
+        source={{ uri: songsList[currentIndex].artwork }}
         style={{
           width: '80%',
           height: '35%',
@@ -133,18 +137,18 @@ const App = () => {
         }}>
         {songsList[currentIndex].title}
       </Text>
-      <View style={{flexDirection: 'row', paddingLeft: 20, marginTop: 20}}>
+      <View style={{ flexDirection: 'row', paddingLeft: 20, marginTop: 20 }}>
         <Image
           source={require('./src/images/spotify.png')}
-          style={{width: 18, height: 18}}
+          style={{ width: 18, height: 18 }}
         />
-        <Text style={{color: 'white', fontSize: 14, marginLeft: 10}}>
+        <Text style={{ color: 'white', fontSize: 14, marginLeft: 10 }}>
           English Songs
         </Text>
       </View>
-      <View style={{flexDirection: 'row', paddingLeft: 20, marginTop: 10}}>
-        <Text style={{color: '#bababa', fontSize: 12}}>20,169 saves</Text>
-        <Text style={{color: '#bababa', fontSize: 12, marginLeft: 10}}>
+      <View style={{ flexDirection: 'row', paddingLeft: 20, marginTop: 10 }}>
+        <Text style={{ color: '#bababa', fontSize: 12 }}>20,169 saves</Text>
+        <Text style={{ color: '#bababa', fontSize: 12, marginLeft: 10 }}>
           4h 26m
         </Text>
       </View>
@@ -156,10 +160,10 @@ const App = () => {
           justifyContent: 'space-between',
           alignSelf: 'center',
         }}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image
             source={require('./src/images/plus.png')}
-            style={{width: 18, height: 18, tintColor: '#bababa'}}
+            style={{ width: 18, height: 18, tintColor: '#bababa' }}
           />
           <Image
             source={require('./src/images/arrow-down.png')}
@@ -180,11 +184,13 @@ const App = () => {
             }}
           />
         </View>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Image
-            source={require('./src/images/suffle.png')}
-            style={{width: 30, height: 30, tintColor: '#bababa'}}
-          />
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity>
+            <Image
+              source={require('./src/images/suffle.png')}
+              style={{ width: 30, height: 30, tintColor: '#bababa' }}
+            />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={async () => {
               if (State.Playing == playbackState) {
@@ -222,7 +228,7 @@ const App = () => {
 
       <FlatList
         data={songsList}
-        renderItem={({item, index}) => {
+        renderItem={({ item, index }) => {
           return (
             <TouchableOpacity
               style={{
@@ -240,14 +246,14 @@ const App = () => {
                 await TrackPlayer.play();
                 setCurrentIndex(index);
               }}>
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Image
-                  source={{uri: item.artwork}}
-                  style={{width: 50, height: 50, borderRadius: 5}}
+                  source={{ uri: item.artwork }}
+                  style={{ width: 50, height: 50, borderRadius: 5 }}
                 />
-                <View style={{marginLeft: 10}}>
-                  <Text style={{color: 'white'}}>{item.title}</Text>
-                  <Text style={{color: 'white', fontSize: 10}}>
+                <View style={{ marginLeft: 10 }}>
+                  <Text style={{ color: 'white' }}>{item.title}</Text>
+                  <Text style={{ color: 'white', fontSize: 10 }}>
                     {item.artist}
                   </Text>
                 </View>
@@ -265,7 +271,7 @@ const App = () => {
               </View>
               <Image
                 source={require('./src/images/option.png')}
-                style={{width: 18, height: 18, tintColor: '#bababa'}}
+                style={{ width: 18, height: 18, tintColor: '#bababa' }}
               />
             </TouchableOpacity>
           );
@@ -273,65 +279,85 @@ const App = () => {
       />
 
       <TouchableOpacity
-       activeOpacity={1}
-        style={{
-          width: '100%',
-          height: 70,
-          position: 'absolute',
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.9)',
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingLeft: 20,
-          paddingRight: 20,
-          justifyContent: 'space-between',
-        }} onPress={()=>{
+        activeOpacity={1}
+        onPress={() => {
           setIsVisible(true)
         }}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Image
-            source={{uri: songsList[currentIndex].artwork}}
-            style={{width: 50, height: 50, borderRadius: 5}}
-          />
-          <View style={{marginLeft: 10}}>
-            <Text style={{color: 'white'}}>
-              {songsList[currentIndex].title}
-            </Text>
-            <Text style={{color: 'white', fontSize: 10}}>
-              {songsList[currentIndex].artist}
-            </Text>
-          </View>
-        </View>
+        <View
+          style={{
+            width: '100%',
+            height: 90,
+            position: 'absolute',
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.9)',
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingLeft: 20,
+            paddingRight: 20,
+            justifyContent: 'space-between',
+          }} >
 
-        <TouchableOpacity
-          onPress={async () => {
-            if (State.Playing == playbackState) {
-              await TrackPlayer.pause();
-            } else {
-              await TrackPlayer.skip(currentIndex);
-              await TrackPlayer.play();
-            }
-          }}>
-          <Image
-            source={
-              State.Playing == playbackState
-                ? require('./src/images/pause2.png')
-                : require('./src/images/play.png')
-            }
-            style={{width: 30, height: 30, tintColor: 'white'}}
-          />
-        </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Image
+              source={{ uri: songsList[currentIndex].artwork }}
+              style={{ width: 50, height: 50, borderRadius: 5 }}
+            />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={{ color: 'white' }}>
+                {songsList[currentIndex].title}
+              </Text>
+              <Text style={{ color: 'white', fontSize: 10 }}>
+                {songsList[currentIndex].artist}
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={async () => {
+              if (State.Playing == playbackState) {
+                await TrackPlayer.pause();
+              } else {
+                await TrackPlayer.skip(currentIndex);
+                await TrackPlayer.play();
+              }
+            }}>
+            <Image
+              source={
+                State.Playing == playbackState
+                  ? require('./src/images/pause2.png')
+                  : require('./src/images/play.png')
+              }
+              style={{ width: 30, height: 30, tintColor: 'white' }}
+            />
+          </TouchableOpacity>
+        </View>
+        <Slider
+          style={{
+            width: '100%',
+            marginTop: 20,
+          }}
+          minimumValue={0}
+          maximumValue={progress.duration}
+          minimumTrackTintColor="#fff"
+          maximumTrackTintColor="rgba(255,255,255,0.5)"
+          thumbTintColor="white"
+          value={progress.position}
+          onSlidingComplete={async value => {
+            await TrackPlayer.seekTo(value);
+          }}
+
+        />
       </TouchableOpacity>
       <SongPlayer
-      isVisible={isVisible}
+        isVisible={isVisible}
         songsList={songsList}
         currentIndex={currentIndex}
         playbackState={playbackState}
         progress={progress}
-        onChange={(x)=>{
+        onChange={(x) => {
           setCurrentIndex(x)
         }}
-        onClose={()=>{
+        onClose={() => {
           setIsVisible(false)
         }}
       />
@@ -341,4 +367,4 @@ const App = () => {
 
 export default App;
 
-//'#a34c0d', '#592804', '#241001', '#000000'
+//
